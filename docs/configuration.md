@@ -100,6 +100,8 @@ Shared across every API and worker process; `0` disables a budget.
 | `LLM_REQUESTS_PER_DAY` | `900` | Under Groq's free-plan 1000 RPD |
 | `LLM_BUDGET_MODE` | `per_attempt` | Charge every HTTP attempt, or `off` |
 | `LLM_BUDGET_UI` | `false` | Also apply LLM budgets to interactive UI requests |
+| `LLM_PRIMARY_TOKENS_PER_DAY` | `200000` | Daily token ceiling for the primary model, matching Groq's free tier for `openai/gpt-oss-120b`; set from console.groq.com/settings/limits, `0` leaves it uncapped |
+| `LLM_SECONDARY_TOKENS_PER_DAY` | `200000` | Daily token ceiling for the secondary model, matching Groq's free tier for `openai/gpt-oss-20b`; set from console.groq.com/settings/limits, `0` leaves it uncapped |
 | `YOUTUBE_READS_PER_MINUTE` | `30` | Worker reads (comment lookups, context, reconciliation) |
 | `YOUTUBE_UNITS_PER_DAY_BUDGET` | `8000` | Below the default 10,000-unit daily YouTube quota |
 | `AUTO_PUBLISH_MAX_PER_HOUR` | `10` | Automatic replies per channel per hour |

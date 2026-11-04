@@ -81,6 +81,7 @@ groups:
 | `/api/review-queue/*` | Drafts waiting for a person |
 | `/api/batch/jobs/*` | Enqueue, list, cancel, requeue and inspect background jobs |
 | `/api/simulation/*` | Simulation controls (only mounted when `REPLYAI_SIMULATION=1`) |
+| `/api/usage/summary` | Per-channel LLM token usage for the last 24 hours, by model role |
 
 Every mutating endpoint requires the session cookie, an allowed `Origin` and the
 `X-CSRF-Token` header. Draft mutations also carry the draft `revision` they were based

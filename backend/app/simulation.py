@@ -15,16 +15,23 @@ so an unpatched code path fails loudly instead of reaching the network.
 
 The fake channel state is shared by the API and worker processes through a file
 (``REPLYAI_SIMULATION_STATE``, default ``backend/.simulation/state.json``) guarded by
-``fcntl.flock``. Control endpoints live under ``/api/simulation`` (see ``router``).
+an OS file lock (``fcntl.flock`` on POSIX, ``msvcrt.locking`` on Windows). Control
+endpoints live under ``/api/simulation`` (see ``router``).
 """
-import fcntl
 import json
 import os
 import re
 import secrets
+import time
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+
+try:
+    import fcntl
+except ImportError:  # Windows has no fcntl; msvcrt locks one byte of the lock file.
+    fcntl = None
+    import msvcrt
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field
@@ -97,12 +104,30 @@ def seed_state() -> dict:
             "created_at": now()}
 
 
+def _lock(lock) -> None:
+    if fcntl is not None:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return
+    lock.seek(0, os.SEEK_END)
+    if lock.tell() == 0:
+        lock.write(b"\0")
+        lock.flush()
+    lock.seek(0)
+    while True:
+        try:
+            msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:
+            time.sleep(0.05)
+
+
 @contextmanager
 def shared_state(write=False):
     path = state_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path.with_suffix(".lock"), "w") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+    mode = "w" if fcntl is not None else "a+b"
+    with open(path.with_suffix(".lock"), mode) as lock:
+        _lock(lock)
         if not path.exists():
             path.write_text(json.dumps(seed_state(), ensure_ascii=False, indent=1))
         data = json.loads(path.read_text())
@@ -232,16 +257,30 @@ class ScriptedProvider:
     def __init__(self, role):
         self.role = role
         self.sent = 0
+        self._usage = None
 
     def usage(self):
-        return {"model": f"sim-{self.role}-scripted", "input_tokens": 0, "output_tokens": 0}
+        return self._usage or {
+            "model": f"sim-{self.role}-scripted", "input_tokens": 0, "output_tokens": 0,
+        }
 
     def attempts(self):
         return [self.usage()] if self.sent else []
 
     async def complete(self, schema, instruction, data):
-        from app.services import llm
         self.sent += 1
+        result = await self._complete(schema, instruction, data)
+        prompt = f"{instruction}{json.dumps(data, sort_keys=True, default=str)}"
+        answer = result.model_dump_json()
+        self._usage = {
+            "model": f"sim-{self.role}-scripted",
+            "input_tokens": max(1, len(prompt) // 4),
+            "output_tokens": max(1, len(answer) // 4),
+        }
+        return result
+
+    async def _complete(self, schema, instruction, data):
+        from app.services import llm
         scenario = scenario_for(data.get("comment", ""))
         if scenario == "auth_fail" and schema is llm.Quality:
             raise llm.ProviderFailure("provider_auth_failed")

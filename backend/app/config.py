@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     # (30 requests/minute, 1000 requests/day).
     llm_requests_per_minute: int = 28
     llm_requests_per_day: int = 900
+    # Daily token ceilings per model role, matching Groq's free-tier limits for
+    # openai/gpt-oss-120b (primary) and openai/gpt-oss-20b (secondary). Set these
+    # from https://console.groq.com/settings/limits; 0 leaves the role uncapped.
+    llm_primary_tokens_per_day: int = 200_000
+    llm_secondary_tokens_per_day: int = 200_000
     # "per_attempt" charges every HTTP attempt, including provider-level retries.
     llm_budget_mode: Literal["per_attempt", "off"] = "per_attempt"
     llm_budget_ui: bool = False

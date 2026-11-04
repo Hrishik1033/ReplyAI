@@ -168,6 +168,26 @@ export type AutomationDecision = {
   resolution: string | null
 }
 
+export type RoleTokenUsage = {
+  used: number
+  limit: number
+  percent: number
+}
+
+export type UsageSummary = {
+  llm: {
+    used: number
+    limit: number
+    percent: number
+    roles: {
+      primary: RoleTokenUsage
+      secondary: RoleTokenUsage
+    }
+    unknown_requests: number
+  }
+  simulation: boolean
+}
+
 export type ReviewItem = {
   decision_id: string
   draft_id: string

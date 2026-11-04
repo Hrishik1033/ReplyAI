@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Shield, Zap, Sparkles, FileText, ChevronDown, CheckCircle2, Eye } from 'lucide-react';
 import AutomationControls from '../components/AutomationControls';
+import TokenUsageGauge from '../components/TokenUsageGauge';
 import { apiRequest, messageOf } from '../lib/api';
 import type { PublishingMode, PublishingSettings, ReplyPreferences } from '../lib/types';
 import type { useAppData } from '../hooks/useAppData';
@@ -505,14 +506,10 @@ export default function SettingsPage({
             </div>
           </section>
 
-          {/* Usage this month */}
+          {/* Usage today */}
           <section className="rounded-2xl border border-dark-600 bg-dark-800/50 backdrop-blur-sm p-6">
-            <h2 className="text-lg font-semibold mb-4">Usage this month</h2>
-            <div className="flex items-center justify-center p-6 border border-dark-600 border-dashed rounded-xl bg-dark-900/50">
-              <div className="text-sm text-text-muted text-center max-w-sm">
-                Aggregate usage history is not supported by the current backend API. (Values omitted).
-              </div>
-            </div>
+            <h2 className="text-lg font-semibold mb-4">LLM usage today</h2>
+            <TokenUsageGauge connected={Boolean(channelId)} />
             
             <div className="flex items-center justify-end gap-3 mt-6">
               <button disabled className="px-5 py-2.5 rounded-lg border border-dark-600 bg-transparent text-sm font-medium opacity-50 cursor-not-allowed">
